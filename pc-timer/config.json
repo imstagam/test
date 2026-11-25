@@ -1,0 +1,17 @@
+{
+  "LimitMinutes": 30,
+  "WarnMinutes": [5, 1],
+  "EndAction": "Shutdown",
+  "GraceSeconds": 30,
+  "CooldownMinutes": 0,
+  "ExemptUsers": ["선생님", "Administrator"],
+  "Browsers": ["chrome", "msedge", "whale", "firefox", "opera", "brave", "iexplore"],
+
+  "_설명_LimitMinutes": "브라우저를 처음 연 순간부터 사용할 수 있는 시간(분)",
+  "_설명_WarnMinutes": "남은 시간이 이 값(분)이 되면 화면에 경고 창 표시",
+  "_설명_EndAction": "시간이 끝나면 할 일: Shutdown(컴퓨터 끄기) / Logoff(로그아웃) / CloseBrowser(브라우저만 닫고 다시 못 열게 함)",
+  "_설명_GraceSeconds": "'시간 끝' 안내 후 실제로 끄기까지 기다리는 시간(초) - 저장할 시간",
+  "_설명_CooldownMinutes": "0이면 끔. 예: 10 → 시간이 끝난 뒤 10분 동안 다시 못 쓰고, 쓰다가 재부팅해도 10분 안에 다시 켜면 남은 시간이 이어짐",
+  "_설명_ExemptUsers": "시간 제한을 받지 않는 Windows 계정 이름(선생님 계정)",
+  "_설명_Browsers": "감시할 브라우저 프로그램 이름(.exe 제외). whale=네이버 웨일, msedge=엣지"
+}
