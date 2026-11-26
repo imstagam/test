@@ -16,6 +16,8 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $defaults = @{
     ServerUrl          = 'http://관리컴퓨터이름:8787'
     CenterName         = '우리 센터'
+    LogoFile           = 'logo.png'
+    ShowShutdownButton = $true
     WarnMinutes        = @(5, 1)
     EndAction          = 'Lock'        # Lock | Logoff | Shutdown
     GraceSeconds       = 30
@@ -184,7 +186,7 @@ if ($Test) {
     $LockForm.FormBorderStyle = 'FixedSingle'
     $LockForm.Text = 'PC 로그인 화면 (시험)'
     $LockForm.ShowInTaskbar = $true
-    $LockForm.ClientSize = New-Object System.Drawing.Size(900, 640)
+    $LockForm.ClientSize = New-Object System.Drawing.Size(900, 760)
     $LockForm.StartPosition = 'CenterScreen'
     $LockForm.add_FormClosed({ [System.Windows.Forms.Application]::Exit() })
 } else {
@@ -193,66 +195,99 @@ if ($Test) {
     $LockForm.add_FormClosing($BlockUserClose)
 }
 
+function New-Button([string]$text, [int]$x, [int]$y, [int]$w, [int]$h, [float]$size, [switch]$Primary) {
+    $b = New-Object System.Windows.Forms.Button
+    $b.Text = $text
+    $b.Location = New-Object System.Drawing.Point($x, $y)
+    $b.Size = New-Object System.Drawing.Size($w, $h)
+    $b.Font = New-Font $size -Bold:$Primary
+    $b.FlatStyle = 'Flat'
+    $b.Cursor = [System.Windows.Forms.Cursors]::Hand
+    if ($Primary) {
+        $b.FlatAppearance.BorderSize = 0
+        $b.BackColor = $ColorBlue
+        $b.ForeColor = [System.Drawing.Color]::White
+    } else {
+        $b.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(200, 204, 214)
+        $b.BackColor = [System.Drawing.Color]::White
+        $b.ForeColor = [System.Drawing.Color]::FromArgb(60, 64, 76)
+    }
+    return $b
+}
+
+$CardW = 520
+$CardH = 640
 $Card = New-Object System.Windows.Forms.Panel
-$Card.Size = New-Object System.Drawing.Size(520, 470)
+$Card.Size = New-Object System.Drawing.Size($CardW, $CardH)
 $Card.BackColor = [System.Drawing.Color]::White
 if ($Test) {
-    $Card.Location = New-Object System.Drawing.Point(190, 85)
+    $LockForm.ClientSize = New-Object System.Drawing.Size(900, 760)
+    $Card.Location = New-Object System.Drawing.Point(190, 90)
 } else {
     $vs = [System.Windows.Forms.SystemInformation]::VirtualScreen
     $ps = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-    $Card.Location = New-Object System.Drawing.Point(([int](($ps.X - $vs.X) + ($ps.Width - 520) / 2)), ([int](($ps.Y - $vs.Y) + ($ps.Height - 470) / 2)))
+    $cx = [int](($ps.X - $vs.X) + ($ps.Width - $CardW) / 2)
+    $cy = [int][Math]::Max(0, ($ps.Y - $vs.Y) + ($ps.Height - $CardH) / 2 + 20)
+    $Card.Location = New-Object System.Drawing.Point($cx, $cy)
 }
 $LockForm.Controls.Add($Card)
 
-$TitleLabel = New-Label ([string]$cfg.CenterName) 0 28 520 44 22 -Bold
+# 센터 로고
+$Logo = New-Object System.Windows.Forms.PictureBox
+$Logo.Location = New-Object System.Drawing.Point(180, 16)
+$Logo.Size = New-Object System.Drawing.Size(160, 160)
+$Logo.SizeMode = 'Zoom'
+$LogoPath = Join-Path $ScriptDir ([string]$cfg.LogoFile)
+if ([string]$cfg.LogoFile -and (Test-Path $LogoPath)) {
+    try {
+        $LogoStream = New-Object System.IO.MemoryStream(, [IO.File]::ReadAllBytes($LogoPath))
+        $Logo.Image = [System.Drawing.Image]::FromStream($LogoStream)
+    } catch { }
+}
+
+$TitleLabel = New-Label ([string]$cfg.CenterName) 0 182 $CardW 42 20 -Bold
 $TitleLabel.TextAlign = 'MiddleCenter'
-$TitleLabel.ForeColor = $ColorNavy
-$SubLabel = New-Label '이름과 비밀번호를 넣고 로그인하세요' 0 76 520 28 12
+$TitleLabel.ForeColor = [System.Drawing.Color]::FromArgb(30, 120, 40)
+$SubLabel = New-Label '이름과 비밀번호를 넣고 로그인하세요' 0 226 $CardW 26 12
 $SubLabel.TextAlign = 'MiddleCenter'
 $SubLabel.ForeColor = $ColorGray
 
-$NameCaption = New-Label '이름' 60 122 400 24 11
+$NameCaption = New-Label '이름' 60 262 400 24 11
 $NameBox = New-Object System.Windows.Forms.TextBox
-$NameBox.Location = New-Object System.Drawing.Point(60, 148)
+$NameBox.Location = New-Object System.Drawing.Point(60, 288)
 $NameBox.Size = New-Object System.Drawing.Size(400, 40)
 $NameBox.Font = New-Font 16
 $NameBox.ImeMode = 'Hangul'
 
-$PwCaption = New-Label '비밀번호' 60 202 400 24 11
+$PwCaption = New-Label '비밀번호' 60 338 400 24 11
 $PwBox = New-Object System.Windows.Forms.TextBox
-$PwBox.Location = New-Object System.Drawing.Point(60, 228)
+$PwBox.Location = New-Object System.Drawing.Point(60, 364)
 $PwBox.Size = New-Object System.Drawing.Size(400, 40)
 $PwBox.Font = New-Font 16
 $PwBox.UseSystemPasswordChar = $true
 
-$LoginBtn = New-Object System.Windows.Forms.Button
-$LoginBtn.Text = '로그인'
-$LoginBtn.Location = New-Object System.Drawing.Point(60, 296)
-$LoginBtn.Size = New-Object System.Drawing.Size(400, 54)
-$LoginBtn.Font = New-Font 16 -Bold
-$LoginBtn.FlatStyle = 'Flat'
-$LoginBtn.FlatAppearance.BorderSize = 0
-$LoginBtn.BackColor = $ColorBlue
-$LoginBtn.ForeColor = [System.Drawing.Color]::White
-$LoginBtn.Cursor = [System.Windows.Forms.Cursors]::Hand
+$LoginBtn = New-Button '로그인' 60 422 400 54 16 -Primary
 
-$MsgLabel = New-Label '' 20 360 480 60 12
+$MsgLabel = New-Label '' 20 482 480 52 12
 $MsgLabel.TextAlign = 'MiddleCenter'
 $MsgLabel.ForeColor = $ColorRed
 
-$StatusLabel = New-Label '' 20 430 480 26 9
+$ShutdownBtn = New-Button '컴퓨터 끄기' 185 540 150 38 11
+$ShutdownBtn.Visible = [bool]$cfg.ShowShutdownButton
+
+$StatusLabel = New-Label '' 20 600 480 26 9
 $StatusLabel.TextAlign = 'MiddleCenter'
 $StatusLabel.ForeColor = $ColorGray
 
-$Card.Controls.AddRange(@($TitleLabel, $SubLabel, $NameCaption, $NameBox, $PwCaption, $PwBox, $LoginBtn, $MsgLabel, $StatusLabel))
+$Card.Controls.AddRange(@($Logo, $TitleLabel, $SubLabel, $NameCaption, $NameBox, $PwCaption, $PwBox, $LoginBtn, $MsgLabel, $ShutdownBtn, $StatusLabel))
 $LockForm.AcceptButton = $LoginBtn
 
-$ClockLabel = New-Label '' 0 0 400 60 28 -Bold
+$ClockLabel = New-Label '' 0 0 400 56 26 -Bold
 $ClockLabel.ForeColor = [System.Drawing.Color]::White
 $ClockLabel.TextAlign = 'MiddleCenter'
-$ClockLabel.Location = New-Object System.Drawing.Point(([int]($Card.Left + 60)), ([int]($Card.Top - 80)))
+$ClockLabel.Location = New-Object System.Drawing.Point(([int]($Card.Left + 60)), ([int][Math]::Max(0, $Card.Top - 60)))
 $LockForm.Controls.Add($ClockLabel)
+if ($Card.Top -lt 56) { $ClockLabel.Visible = $false }
 
 function Set-Msg([string]$text, [switch]$Info) {
     $MsgLabel.ForeColor = if ($Info) { $ColorGray } else { $ColorRed }
@@ -437,17 +472,61 @@ function Invoke-Login {
 }
 $LoginBtn.add_Click({ Invoke-Login })
 
-$StopBtn.add_Click({
-    $ans = [System.Windows.Forms.MessageBox]::Show($Overlay,
-        "사용을 끝낼까요?`n남은 시간은 저장되고, 브라우저가 닫혀요.", '그만하기',
+# 컴퓨터 끄기
+function Invoke-Shutdown {
+    Stop-Browsers
+    Write-Log '컴퓨터 끄기'
+    if ($Test) { Show-Lock; Show-Popup '시험 모드라서 실제로 끄지는 않아요.' 4; return }
+    $S.Phase = 'Done'; $S.EndSw.Restart()
+    Start-Process -FilePath 'shutdown.exe' -ArgumentList '/s', '/f', '/t', '0' -WindowStyle Hidden
+}
+$ShutdownBtn.add_Click({
+    $ans = [System.Windows.Forms.MessageBox]::Show($LockForm, '컴퓨터를 끌까요?', '컴퓨터 끄기',
         [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
-    if ($ans -eq [System.Windows.Forms.DialogResult]::Yes -and $S.Phase -eq 'Active') {
-        $left = Get-LocalRemaining
-        Write-Log "그만하기: $($S.Name)"
-        Close-ServerSession '스스로 그만함'
-        Invoke-EndAction
-        if ($S.Phase -eq 'Locked') { Set-Msg "수고했어요! 남은 시간 $(Format-Minutes $left)은 저장됐어요." -Info }
-    }
+    if ($ans -eq [System.Windows.Forms.DialogResult]::Yes -and $S.Phase -eq 'Locked') { Invoke-Shutdown }
+})
+
+# '그만하기' 눌렀을 때 고르는 창: 로그아웃 / 로그아웃하고 컴퓨터 끄기 / 취소
+function Show-StopDialog {
+    $d = New-Object System.Windows.Forms.Form
+    $d.FormBorderStyle = 'FixedDialog'
+    $d.Text = '그만하기'
+    $d.StartPosition = 'CenterScreen'
+    $d.TopMost = $true
+    $d.MaximizeBox = $false
+    $d.MinimizeBox = $false
+    $d.ShowInTaskbar = $false
+    $d.BackColor = [System.Drawing.Color]::White
+    $d.ClientSize = New-Object System.Drawing.Size(460, 260)
+    $l = New-Label "사용을 끝낼까요?`n남은 시간은 저장되고, 브라우저가 닫혀요." 20 16 420 70 13
+    $l.TextAlign = 'MiddleCenter'
+    $first = if ($Action -eq 'Shutdown') { '로그아웃하고 컴퓨터 끄기' } else { '로그아웃 (다음 친구가 쓸 수 있게)' }
+    $b1 = New-Button $first 30 96 400 48 13 -Primary
+    $b1.DialogResult = [System.Windows.Forms.DialogResult]::Yes
+    $b2 = New-Button '로그아웃하고 컴퓨터 끄기' 30 152 400 42 12
+    $b2.DialogResult = [System.Windows.Forms.DialogResult]::No
+    $b3 = New-Button '취소 (계속 쓰기)' 30 202 400 42 12
+    $b3.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    if ($Action -eq 'Shutdown') { $b2.Visible = $false; $b3.Top = 152; $d.ClientSize = New-Object System.Drawing.Size(460, 210) }
+    $d.Controls.AddRange(@($l, $b1, $b2, $b3))
+    $d.AcceptButton = $b1
+    $d.CancelButton = $b3
+    $r = $d.ShowDialog($Overlay)
+    $d.Dispose()
+    if ($r -eq [System.Windows.Forms.DialogResult]::Yes) { return 'logout' }
+    if ($r -eq [System.Windows.Forms.DialogResult]::No) { return 'shutdown' }
+    return 'cancel'
+}
+
+$StopBtn.add_Click({
+    $choice = Show-StopDialog
+    if ($choice -eq 'cancel' -or $S.Phase -ne 'Active') { return }
+    $left = Get-LocalRemaining
+    Write-Log "그만하기($choice): $($S.Name)"
+    Close-ServerSession '스스로 그만함'
+    if ($choice -eq 'shutdown') { Invoke-Shutdown; return }
+    Invoke-EndAction
+    if ($S.Phase -eq 'Locked') { Set-Msg "수고했어요! 남은 시간 $(Format-Minutes $left)은 저장됐어요." -Info }
 })
 
 # 서버에 사용 중임을 알리고 남은 시간 받아오기

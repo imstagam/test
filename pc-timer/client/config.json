@@ -1,6 +1,8 @@
 {
   "ServerUrl": "http://192.168.0.10:8787",
-  "CenterName": "○○지역아동센터",
+  "CenterName": "신상도 우리동네키움센터",
+  "LogoFile": "logo.png",
+  "ShowShutdownButton": true,
   "EndAction": "Lock",
   "WarnMinutes": [5, 1],
   "GraceSeconds": 30,
@@ -9,7 +11,9 @@
   "Browsers": ["chrome", "msedge", "whale", "firefox", "opera", "brave", "iexplore"],
 
   "_설명_ServerUrl": "관리 컴퓨터 주소. 관리 컴퓨터에서 install-server.bat 을 실행하면 화면에 알려 줍니다",
-  "_설명_CenterName": "로그인 화면 맨 위에 보이는 이름",
+  "_설명_CenterName": "로그인 화면에 보이는 센터 이름",
+  "_설명_LogoFile": "로그인 화면 맨 위 로고 그림 파일(이 폴더 안). 바꾸려면 같은 이름(logo.png)으로 덮어쓰기. 빈칸이면 로고 없음",
+  "_설명_ShowShutdownButton": "true 면 로그인 화면에 [컴퓨터 끄기] 버튼 표시",
   "_설명_EndAction": "시간이 끝나거나 '그만하기'를 누르면: Lock(로그인 화면으로) / Logoff(Windows 로그아웃) / Shutdown(컴퓨터 끄기)",
   "_설명_WarnMinutes": "남은 시간이 이 값(분)이 되면 경고 창",
   "_설명_GraceSeconds": "시간이 끝난 뒤 저장할 수 있게 기다려 주는 시간(초)",

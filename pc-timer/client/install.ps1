@@ -30,8 +30,8 @@ try {
 
     Write-Host "1) 파일 복사: $dst"
     New-Item -ItemType Directory -Path $dst -Force | Out-Null
-    foreach ($f in 'client.ps1', 'launch.vbs', 'config.json') {
-        Copy-Item (Join-Path $src $f) (Join-Path $dst $f) -Force
+    foreach ($f in 'client.ps1', 'launch.vbs', 'config.json', 'logo.png') {
+        if (Test-Path (Join-Path $src $f)) { Copy-Item (Join-Path $src $f) (Join-Path $dst $f) -Force }
     }
     Get-ChildItem $dst | Unblock-File
 
