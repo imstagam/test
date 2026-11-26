@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PC 시간 관리</title>
+<style>
+  :root {
+    --bg: #f4f6fa; --card: #ffffff; --text: #1d2433; --muted: #6b7385; --line: #e3e7ef;
+    --accent: #2f6fed; --accent-text: #ffffff; --gift: #e8590c; --danger: #d6336c; --ok: #2b8a3e;
+    --chip: #eef2fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151c; --card: #1b2029; --text: #e7eaf0; --muted: #98a0b3; --line: #2b3240;
+      --accent: #5b8cff; --accent-text: #0b1020; --gift: #ff8a3d; --danger: #ff6b9a; --ok: #51cf66;
+      --chip: #232a37;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  header h1 { font-size: 22px; margin: 0; flex: 1; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+  .toolbar .grow { flex: 1; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
+           padding: 7px 12px; border-radius: 8px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: bold; }
+  button.gift { color: var(--gift); border-color: var(--gift); font-weight: bold; }
+  button.danger { color: var(--danger); }
+  button.small { padding: 4px 9px; font-size: 13px; }
+  input, select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+                  background: var(--bg); color: var(--text); width: 100%; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 9px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+  th { font-size: 13px; color: var(--muted); font-weight: normal; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .big { font-size: 17px; font-weight: bold; }
+  .zero { color: var(--danger); }
+  .chip { display: inline-block; padding: 2px 8px; border-radius: 99px; background: var(--chip); font-size: 12px; }
+  .online { color: var(--ok); font-weight: bold; }
+  .actions { display: flex; gap: 4px; flex-wrap: wrap; }
+  #login { max-width: 360px; margin: 12vh auto; }
+  #login h1 { font-size: 22px; margin-top: 0; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .err { color: var(--danger); min-height: 22px; }
+  dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text);
+           width: min(420px, calc(100vw - 32px)); padding: 20px; }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog h2 { margin: 0 0 14px; font-size: 18px; }
+  .dlg-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .empty { text-align: center; color: var(--muted); padding: 30px 0; }
+  .t-gift { color: var(--gift); }
+  .t-admin { color: var(--accent); }
+  h2.section { font-size: 16px; margin: 0 0 10px; }
+</style>
+</head>
+<body>
+
+<div id="login" class="card" hidden>
+  <h1>PC 시간 관리</h1>
+  <form id="loginForm">
+    <div class="field">
+      <label for="adminPw">관리자 비밀번호</label>
+      <input id="adminPw" type="password" autocomplete="current-password" autofocus>
+    </div>
+    <div class="err" id="loginErr"></div>
+    <button class="primary" style="width:100%">들어가기</button>
+  </form>
+</div>
+
+<div id="app" class="wrap" hidden>
+  <header>
+    <h1>PC 시간 관리</h1>
+    <span class="muted" id="weekInfo"></span>
+    <button id="btnSettings">설정</button>
+    <button id="btnLogout">나가기</button>
+  </header>
+
+  <div class="card">
+    <div class="toolbar">
+      <button class="primary" id="btnAdd">+ 아이 등록</button>
+      <button class="gift" id="btnGiftAll">🎁 모두에게 선물</button>
+      <span class="grow"></span>
+      <input id="search" placeholder="이름 찾기" style="max-width:200px">
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>이름</th><th>남은 시간 (합계)</th><th>기본 남음</th><th>선물 시간</th>
+            <th>이번 주 사용</th><th>상태</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="section">기록 <span class="muted">(최근 300개)</span></h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>시각</th><th>이름</th><th>내용</th></tr></thead>
+        <tbody id="hist"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form id="dlgForm" method="dialog">
+    <h2 id="dlgTitle"></h2>
+    <div id="dlgBody"></div>
+    <div class="err" id="dlgErr"></div>
+    <div class="dlg-buttons">
+      <button type="button" id="dlgCancel">취소</button>
+      <button class="primary" id="dlgOk" value="ok">확인</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let token = sessionStorage.getItem('pctimer_admin') || '';
+let state = null;
+
+function fmt(sec) {
+  sec = Math.max(0, Math.floor(sec || 0));
+  if (sec < 60) return sec > 0 ? sec + '초' : '0분';
+  const m = Math.floor(sec / 60), h = Math.floor(m / 60);
+  return h ? `${h}시간 ${m % 60}분` : `${m}분`;
+}
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function api(path, body) {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'X-Admin-Token': token },
+    body: JSON.stringify(body || {})
+  });
+  const data = await res.json();
+  if (!data.ok && data.error === 'auth') { showLogin(); throw new Error(data.message); }
+  return data;
+}
+
+function showLogin() {
+  token = ''; sessionStorage.removeItem('pctimer_admin');
+  $('app').hidden = true; $('login').hidden = false; $('adminPw').focus();
+}
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('loginErr').textContent = '';
+  try {
+    const r = await api('/admin/api/login', { password: $('adminPw').value });
+    if (!r.ok) { $('loginErr').textContent = r.message; return; }
+    token = r.token; sessionStorage.setItem('pctimer_admin', token);
+    $('adminPw').value = '';
+    $('login').hidden = true; $('app').hidden = false;
+    refresh();
+  } catch (err) { $('loginErr').textContent = '서버에 연결할 수 없어요.'; }
+});
+
+async function refresh() {
+  if (!token) return showLogin();
+  try {
+    const r = await api('/admin/api/state');
+    if (!r.ok) return;
+    state = r;
+    $('login').hidden = true; $('app').hidden = false;
+    render();
+  } catch (e) { /* 다음 새로고침에 다시 시도 */ }
+}
+
+function render() {
+  const s = state;
+  $('weekInfo').textContent = `이번 주: ${s.weekStart} (월) 부터 · 기본 ${s.settings.weeklyMinutes}분/주 · 서버 시각 ${s.serverTime.slice(11, 16)}`;
+  const q = $('search').value.trim();
+  const kids = s.children.filter(c => !q || c.name.includes(q));
+  $('rows').innerHTML = kids.length ? kids.map(c => `
+    <tr>
+      <td><b>${esc(c.name)}</b>${c.weeklyMinutes != null ? ` <span class="chip">주 ${c.weeklyMinutes}분</span>` : ''}</td>
+      <td class="num big ${c.remainingSec <= 0 ? 'zero' : ''}">${fmt(c.remainingSec)}</td>
+      <td class="num">${fmt(c.baseLeftSec)} <span class="muted">/ ${fmt(c.weeklySec)}</span></td>
+      <td class="num">${c.bonusSec > 0 ? '🎁 ' + fmt(c.bonusSec) : '<span class="muted">-</span>'}</td>
+      <td class="num">${fmt(c.usedWeekSec)}</td>
+      <td>${c.onlinePc ? `<span class="online">● ${esc(c.onlinePc)}</span> <span class="muted">${esc(c.onlineSince.slice(11))}~</span>` : '<span class="muted">-</span>'}</td>
+      <td><div class="actions">
+        <button class="small gift" data-act="gift" data-id="${c.id}">🎁 선물</button>
+        <button class="small" data-act="edit" data-id="${c.id}">수정·비밀번호</button>
+        <button class="small" data-act="reset" data-id="${c.id}">이번 주 다시 채우기</button>
+        ${c.onlinePc ? `<button class="small danger" data-act="kick" data-id="${c.id}">사용 끝내기</button>` : ''}
+        <button class="small danger" data-act="del" data-id="${c.id}">삭제</button>
+      </div></td>
+    </tr>`).join('')
+    : `<tr><td colspan="7" class="empty">${s.children.length ? '찾는 이름이 없어요.' : '아직 등록된 아이가 없어요. "+ 아이 등록"을 눌러 주세요.'}</td></tr>`;
+
+  $('hist').innerHTML = s.history.length ? s.history.map(h => {
+    let what = '';
+    if (h.type === 'session') what = `💻 ${esc(h.pc)} 에서 ${fmt(h.sec)} 사용${h.note ? ' <span class="muted">(' + esc(h.note) + ')</span>' : ''}`;
+    else if (h.type === 'gift') what = `<span class="t-gift">🎁 ${h.minutes > 0 ? '+' : ''}${h.minutes}분 선물</span>${h.note ? ' · ' + esc(h.note) : ''}`;
+    else what = `<span class="t-admin">${esc(h.note)}</span>`;
+    return `<tr><td class="muted">${esc(h.t)}</td><td>${esc(h.name)}</td><td>${what}</td></tr>`;
+  }).join('') : '<tr><td colspan="3" class="empty">아직 기록이 없어요.</td></tr>';
+}
+
+// ------------------------------------------------ 대화상자
+function openDialog(title, fieldsHtml, onOk, okLabel = '확인') {
+  $('dlgTitle').textContent = title;
+  $('dlgBody').innerHTML = fieldsHtml;
+  $('dlgErr').textContent = '';
+  $('dlgOk').textContent = okLabel;
+  const dlg = $('dlg');
+  $('dlgForm').onsubmit = async (e) => {
+    e.preventDefault();
+    $('dlgErr').textContent = '';
+    try {
+      const r = await onOk();
+      if (r && !r.ok) { $('dlgErr').textContent = r.message; return; }
+      dlg.close(); refresh();
+    } catch (err) { $('dlgErr').textContent = err.message || '서버에 연결할 수 없어요.'; }
+  };
+  dlg.showModal();
+  const first = $('dlgBody').querySelector('input'); if (first) first.focus();
+}
+$('dlgCancel').onclick = () => $('dlg').close();
+
+const field = (id, label, attrs = '', hint = '') =>
+  `<div class="field"><label for="${id}">${label}</label><input id="${id}" ${attrs}>${hint ? `<div class="hint">${hint}</div>` : ''}</div>`;
+
+$('btnAdd').onclick = () => openDialog('아이 등록',
+  field('f_name', '이름', 'autocomplete="off"', '아이가 로그인할 때 쓰는 이름이에요. 같은 이름이 있으면 "김민수2"처럼 구분해 주세요.') +
+  field('f_pw', '비밀번호', 'autocomplete="off"', '숫자 4자리 정도면 충분해요. 아이에게 알려 주세요.') +
+  field('f_week', '주간 시간(분) - 비우면 기본값', `type="number" min="0" placeholder="${state.settings.weeklyMinutes}"`),
+  () => api('/admin/api/child/add', { name: $('f_name').value, password: $('f_pw').value, weeklyMinutes: $('f_week').value }),
+  '등록');
+
+$('btnGiftAll').onclick = () => openDialog('🎁 모두에게 선물',
+  field('f_min', '몇 분?', 'type="number" value="10"', '등록된 모든 아이에게 똑같이 더해 줍니다.') +
+  field('f_note', '메모 (선택)', 'placeholder="예: 대청소 도와줘서"'),
+  () => api('/admin/api/gift', { id: 'all', minutes: $('f_min').value, note: $('f_note').value }), '선물하기');
+
+$('btnSettings').onclick = () => openDialog('설정',
+  field('f_week', '기본 주간 시간(분)', `type="number" min="0" value="${state.settings.weeklyMinutes}"`,
+    '매주 월요일 0시에 모든 아이의 기본 시간이 이 값으로 다시 채워져요. 개별 시간을 정한 아이는 그 값을 써요.' +
+    (state.bonusResetsWeekly ? ' 선물 시간도 월요일에 사라져요.' : ' 선물 시간은 월요일에도 남아 있어요.')) +
+  field('f_newpw', '새 관리자 비밀번호 (바꿀 때만)', 'type="password" autocomplete="new-password"'),
+  () => api('/admin/api/settings', { weeklyMinutes: $('f_week').value, newPassword: $('f_newpw').value }), '저장');
+
+$('btnLogout').onclick = async () => { try { await api('/admin/api/logout'); } catch (e) {} showLogin(); };
+$('search').oninput = () => state && render();
+
+$('rows').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const c = state.children.find(x => x.id === b.dataset.id); if (!c) return;
+  const n = esc(c.name);
+  switch (b.dataset.act) {
+    case 'gift':
+      openDialog(`🎁 ${c.name}에게 선물`,
+        field('f_min', '몇 분?', 'type="number" value="10"', '시간을 빼려면 -10 처럼 넣으세요.') +
+        field('f_note', '메모 (선택)', 'placeholder="예: 숙제 다 해서"'),
+        () => api('/admin/api/gift', { id: c.id, minutes: $('f_min').value, note: $('f_note').value }), '선물하기');
+      break;
+    case 'edit':
+      openDialog(`${c.name} 수정`,
+        field('f_name', '이름', `value="${n}" autocomplete="off"`) +
+        field('f_pw', '새 비밀번호 (바꿀 때만)', 'autocomplete="off"', '아이가 비밀번호를 잊었을 때 여기서 새로 정해 주세요.') +
+        field('f_week', '주간 시간(분) - 비우면 기본값', `type="number" min="0" value="${c.weeklyMinutes ?? ''}" placeholder="${state.settings.weeklyMinutes}"`),
+        () => api('/admin/api/child/update', { id: c.id, name: $('f_name').value, password: $('f_pw').value, weeklyMinutes: $('f_week').value }),
+        '저장');
+      break;
+    case 'reset':
+      openDialog('이번 주 다시 채우기', `<p>${n}의 이번 주 기본 시간을 처음처럼 다시 채울까요?</p>`,
+        () => api('/admin/api/child/resetweek', { id: c.id }));
+      break;
+    case 'kick':
+      openDialog('사용 끝내기', `<p>${n}이(가) ${esc(c.onlinePc)}에서 쓰고 있어요. 지금 끝낼까요?<br><span class="muted">30초 안에 그 컴퓨터가 로그인 화면으로 돌아가요. 쓴 시간까지만 빠져요.</span></p>`,
+        () => api('/admin/api/session/end', { id: c.id }), '끝내기');
+      break;
+    case 'del':
+      openDialog('삭제', `<p>${n}을(를) 삭제할까요? 남은 시간과 비밀번호가 모두 지워져요.</p>`,
+        () => api('/admin/api/child/delete', { id: c.id }), '삭제');
+      break;
+  }
+});
+
+refresh();
+setInterval(() => { if (token && !$('dlg').open) refresh(); }, 10000);
+</script>
+</body>
+</html>

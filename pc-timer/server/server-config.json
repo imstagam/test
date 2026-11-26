@@ -1,0 +1,9 @@
+{
+  "Port": 8787,
+  "SessionTimeoutMinutes": 10,
+  "BonusResetsWeekly": false,
+
+  "_설명_Port": "아이 PC와 관리 화면이 접속하는 포트 번호. 바꾸면 아이 PC config.json 의 ServerUrl 도 같이 바꾸세요",
+  "_설명_SessionTimeoutMinutes": "아이 PC와 이 시간(분) 넘게 연결이 끊기면 그 사용은 자동으로 끝난 것으로 봅니다",
+  "_설명_BonusResetsWeekly": "true 로 하면 선물 시간도 매주 월요일에 사라집니다 (기본: 남아 있음)"
+}
