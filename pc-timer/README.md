@@ -97,6 +97,13 @@
 
 ---
 
+
+## "관리 컴퓨터에 연결 안 됨"이 뜰 때
+
+1. **관리 컴퓨터**에서 `server/check-server.bat` 실행 → 서버를 다시 켜고 방화벽을 열어 준 뒤, 아이 PC에 넣을 **진짜 주소**를 보여 줍니다.
+2. **아이 PC**에서 선생님 계정으로 들어가(`Ctrl+Alt+Del` → 사용자 전환) `client/check-connection.bat` 실행 → 무엇이 문제인지 알려 줍니다.
+3. 주소가 틀렸으면 `client/config.json`의 `ServerUrl`을 고치고 `install.bat`을 다시 실행합니다.
+
 ## 알아 두세요
 
 - **관리 컴퓨터가 꺼져 있거나 네트워크가 끊기면 아이들이 새로 로그인할 수 없습니다.** 이미 쓰고 있던 아이는 남은 시간까지 계속 쓰고, 연결되면 다시 맞춰집니다.
@@ -120,10 +127,12 @@ server/  (관리 컴퓨터)
   install-server.bat      설치
   uninstall-server.bat    제거
   reset-admin-password.bat 관리자 비밀번호 다시 정하기
+  check-server.bat        서버 진단·복구 (방화벽 열기 포함)
 client/  (아이 PC)
   client.ps1              로그인 화면 + 시간 제한
   launch.vbs              검은 창 없이 실행
   config.json             설정
   logo.png                로그인 화면 로고
   install.bat / uninstall.bat / test.bat
+  check-connection.bat    연결 문제 진단
 ```
